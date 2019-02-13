@@ -158,10 +158,10 @@ namespace Mirror.Weaver
 
         public static WeaverLists lists;
 
-        public static AssemblyDefinition scriptDef;
-        public static ModuleDefinition corLib;
-        public static AssemblyDefinition m_UnityAssemblyDefinition;
-        public static AssemblyDefinition m_UNetAssemblyDefinition;
+        //public static AssemblyDefinition scriptDef;
+        //public static ModuleDefinition corLib;
+        //public static AssemblyDefinition m_UnityAssemblyDefinition;
+        //public static AssemblyDefinition m_UNetAssemblyDefinition;
 
         static bool m_DebugFlag = true;
 
@@ -1008,169 +1008,174 @@ namespace Mirror.Weaver
             return false;
         }
 
-        static void SetupUnityTypes()
+        static void SetupUnityTypes(AssemblyDefinition unityAsmDef, AssemblyDefinition mirrorAsmDef)
         {
-            vector2Type = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Vector2");
-            vector3Type = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Vector3");
-            vector4Type = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Vector4");
-            colorType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Color");
-            color32Type = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Color32");
-            quaternionType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Quaternion");
-            rectType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Rect");
-            planeType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Plane");
-            rayType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Ray");
-            matrixType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Matrix4x4");
-            gameObjectType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.GameObject");
-            transformType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Transform");
-            unityObjectType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Object");
+            vector2Type = unityAsmDef.MainModule.GetType("UnityEngine.Vector2");
+            vector3Type = unityAsmDef.MainModule.GetType("UnityEngine.Vector3");
+            vector4Type = unityAsmDef.MainModule.GetType("UnityEngine.Vector4");
+            colorType = unityAsmDef.MainModule.GetType("UnityEngine.Color");
+            color32Type = unityAsmDef.MainModule.GetType("UnityEngine.Color32");
+            quaternionType = unityAsmDef.MainModule.GetType("UnityEngine.Quaternion");
+            rectType = unityAsmDef.MainModule.GetType("UnityEngine.Rect");
+            planeType = unityAsmDef.MainModule.GetType("UnityEngine.Plane");
+            rayType = unityAsmDef.MainModule.GetType("UnityEngine.Ray");
+            matrixType = unityAsmDef.MainModule.GetType("UnityEngine.Matrix4x4");
+            gameObjectType = unityAsmDef.MainModule.GetType("UnityEngine.GameObject");
+            transformType = unityAsmDef.MainModule.GetType("UnityEngine.Transform");
+            unityObjectType = unityAsmDef.MainModule.GetType("UnityEngine.Object");
 
-            NetworkClientType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkClient");
-            NetworkServerType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkServer");
+            NetworkClientType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkClient");
+            NetworkServerType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkServer");
 
-            SyncVarType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.SyncVarAttribute");
-            CommandType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.CommandAttribute");
-            ClientRpcType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.ClientRpcAttribute");
-            TargetRpcType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.TargetRpcAttribute");
-            SyncEventType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.SyncEventAttribute");
-            SyncObjectType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.SyncObject");
+            SyncVarType = mirrorAsmDef.MainModule.GetType("Mirror.SyncVarAttribute");
+            CommandType = mirrorAsmDef.MainModule.GetType("Mirror.CommandAttribute");
+            ClientRpcType = mirrorAsmDef.MainModule.GetType("Mirror.ClientRpcAttribute");
+            TargetRpcType = mirrorAsmDef.MainModule.GetType("Mirror.TargetRpcAttribute");
+            SyncEventType = mirrorAsmDef.MainModule.GetType("Mirror.SyncEventAttribute");
+            SyncObjectType = mirrorAsmDef.MainModule.GetType("Mirror.SyncObject");
         }
 
-        static void SetupCorLib()
+        static void SetupCorLib(AssemblyDefinition scriptDef, out ModuleDefinition corLib)
         {
-            AssemblyNameReference name = AssemblyNameReference.Parse("mscorlib");
-            ReaderParameters parameters = new ReaderParameters
-            {
-                AssemblyResolver = scriptDef.MainModule.AssemblyResolver,
-            };
-            corLib = scriptDef.MainModule.AssemblyResolver.Resolve(name, parameters).MainModule;
+			corLib = null;
+			
         }
 
-        static TypeReference ImportCorLibType(string fullName)
+        static TypeReference ImportCorLibType(string fullName, AssemblyDefinition scriptDef, ModuleDefinition corLib)
         {
             TypeDefinition type = corLib.GetType(fullName) ?? corLib.ExportedTypes.First(t => t.FullName == fullName).Resolve();
             return scriptDef.MainModule.ImportReference(type);
         }
 
-        static void SetupTargetTypes()
+        static void SetupTargetTypes(AssemblyDefinition unityAsmDef, AssemblyDefinition mirrorAsmDef, AssemblyDefinition scriptDef)
         {
-            // system types
-            SetupCorLib();
-            voidType = ImportCorLibType("System.Void");
-            singleType = ImportCorLibType("System.Single");
-            doubleType = ImportCorLibType("System.Double");
-            decimalType = ImportCorLibType("System.Decimal");
-            boolType = ImportCorLibType("System.Boolean");
-            stringType = ImportCorLibType("System.String");
-            int64Type = ImportCorLibType("System.Int64");
-            uint64Type = ImportCorLibType("System.UInt64");
-            int32Type = ImportCorLibType("System.Int32");
-            uint32Type = ImportCorLibType("System.UInt32");
-            int16Type = ImportCorLibType("System.Int16");
-            uint16Type = ImportCorLibType("System.UInt16");
-            byteType = ImportCorLibType("System.Byte");
-            sbyteType = ImportCorLibType("System.SByte");
-            charType = ImportCorLibType("System.Char");
-            objectType = ImportCorLibType("System.Object");
-            valueTypeType = ImportCorLibType("System.ValueType");
-            typeType = ImportCorLibType("System.Type");
-            IEnumeratorType = ImportCorLibType("System.Collections.IEnumerator");
-            guidType = ImportCorLibType("System.Guid");
+			AssemblyNameReference name = AssemblyNameReference.Parse("mscorlib");
+			ReaderParameters parameters = new ReaderParameters
+			{
+				AssemblyResolver = scriptDef.MainModule.AssemblyResolver,
+			};
 
-            NetworkReaderType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkReader");
-            NetworkReaderDef = NetworkReaderType.Resolve();
+			using (ModuleDefinition corLib = scriptDef.MainModule.AssemblyResolver.Resolve(name, parameters).MainModule)
+			{
 
-            NetworkReaderCtor = Resolvers.ResolveMethod(NetworkReaderDef, scriptDef, ".ctor");
+				// system types
+				voidType = ImportCorLibType("System.Void", scriptDef, corLib);
+				singleType = ImportCorLibType("System.Single", scriptDef, corLib);
+				doubleType = ImportCorLibType("System.Double", scriptDef, corLib);
+				decimalType = ImportCorLibType("System.Decimal", scriptDef, corLib);
+				boolType = ImportCorLibType("System.Boolean", scriptDef, corLib);
+				stringType = ImportCorLibType("System.String", scriptDef, corLib);
+				int64Type = ImportCorLibType("System.Int64", scriptDef, corLib);
+				uint64Type = ImportCorLibType("System.UInt64", scriptDef, corLib);
+				int32Type = ImportCorLibType("System.Int32", scriptDef, corLib);
+				uint32Type = ImportCorLibType("System.UInt32", scriptDef, corLib);
+				int16Type = ImportCorLibType("System.Int16", scriptDef, corLib);
+				uint16Type = ImportCorLibType("System.UInt16", scriptDef, corLib);
+				byteType = ImportCorLibType("System.Byte", scriptDef, corLib);
+				sbyteType = ImportCorLibType("System.SByte", scriptDef, corLib);
+				charType = ImportCorLibType("System.Char", scriptDef, corLib);
+				objectType = ImportCorLibType("System.Object", scriptDef, corLib);
+				valueTypeType = ImportCorLibType("System.ValueType", scriptDef, corLib);
+				typeType = ImportCorLibType("System.Type", scriptDef, corLib);
+				IEnumeratorType = ImportCorLibType("System.Collections.IEnumerator", scriptDef, corLib);
+				guidType = ImportCorLibType("System.Guid", scriptDef, corLib);
 
-            NetworkWriterType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkWriter");
-            NetworkWriterDef  = NetworkWriterType.Resolve();
+				NetworkReaderType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkReader");
+				NetworkReaderDef = NetworkReaderType.Resolve();
 
-            NetworkWriterCtor = Resolvers.ResolveMethod(NetworkWriterDef, scriptDef, ".ctor");
+				NetworkReaderCtor = Resolvers.ResolveMethod(NetworkReaderDef, scriptDef, ".ctor");
 
-            NetworkServerGetActive = Resolvers.ResolveMethod(NetworkServerType, scriptDef, "get_active");
-            NetworkServerGetLocalClientActive = Resolvers.ResolveMethod(NetworkServerType, scriptDef, "get_localClientActive");
-            NetworkClientGetActive = Resolvers.ResolveMethod(NetworkClientType, scriptDef, "get_active");
+				NetworkWriterType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkWriter");
+				NetworkWriterDef = NetworkWriterType.Resolve();
 
-            NetworkReaderReadInt32 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadInt32");
+				NetworkWriterCtor = Resolvers.ResolveMethod(NetworkWriterDef, scriptDef, ".ctor");
 
-            NetworkWriterWriteInt32 = Resolvers.ResolveMethodWithArg(NetworkWriterType, scriptDef, "Write", int32Type);
-            NetworkWriterWriteInt16 = Resolvers.ResolveMethodWithArg(NetworkWriterType, scriptDef, "Write", int16Type);
+				NetworkServerGetActive = Resolvers.ResolveMethod(NetworkServerType, scriptDef, "get_active");
+				NetworkServerGetLocalClientActive = Resolvers.ResolveMethod(NetworkServerType, scriptDef, "get_localClientActive");
+				NetworkClientGetActive = Resolvers.ResolveMethod(NetworkClientType, scriptDef, "get_active");
 
-            NetworkReaderReadPacked32 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadPackedUInt32");
-            NetworkReaderReadPacked64 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadPackedUInt64");
-            NetworkReaderReadByte = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadByte");
+				NetworkReaderReadInt32 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadInt32");
 
-            NetworkWriterWritePacked32 = Resolvers.ResolveMethod(NetworkWriterType, scriptDef, "WritePackedUInt32");
-            NetworkWriterWritePacked64 = Resolvers.ResolveMethod(NetworkWriterType, scriptDef, "WritePackedUInt64");
+				NetworkWriterWriteInt32 = Resolvers.ResolveMethodWithArg(NetworkWriterType, scriptDef, "Write", int32Type);
+				NetworkWriterWriteInt16 = Resolvers.ResolveMethodWithArg(NetworkWriterType, scriptDef, "Write", int16Type);
 
-            NetworkReadUInt16 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadUInt16");
-            NetworkWriteUInt16 = Resolvers.ResolveMethodWithArg(NetworkWriterType, scriptDef, "Write", uint16Type);
+				NetworkReaderReadPacked32 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadPackedUInt32");
+				NetworkReaderReadPacked64 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadPackedUInt64");
+				NetworkReaderReadByte = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadByte");
 
-            CmdDelegateReference = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkBehaviour/CmdDelegate");
-            CmdDelegateConstructor = Resolvers.ResolveMethod(CmdDelegateReference, scriptDef, ".ctor");
-            scriptDef.MainModule.ImportReference(gameObjectType);
-            scriptDef.MainModule.ImportReference(transformType);
+				NetworkWriterWritePacked32 = Resolvers.ResolveMethod(NetworkWriterType, scriptDef, "WritePackedUInt32");
+				NetworkWriterWritePacked64 = Resolvers.ResolveMethod(NetworkWriterType, scriptDef, "WritePackedUInt64");
 
-            TypeReference unetViewTmp = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkIdentity");
-            NetworkIdentityType = scriptDef.MainModule.ImportReference(unetViewTmp);
+				NetworkReadUInt16 = Resolvers.ResolveMethod(NetworkReaderType, scriptDef, "ReadUInt16");
+				NetworkWriteUInt16 = Resolvers.ResolveMethodWithArg(NetworkWriterType, scriptDef, "Write", uint16Type);
 
-            NetworkBehaviourType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkBehaviour");
-            NetworkBehaviourType2 = scriptDef.MainModule.ImportReference(NetworkBehaviourType);
-            NetworkConnectionType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkConnection");
+				CmdDelegateReference = mirrorAsmDef.MainModule.GetType("Mirror.NetworkBehaviour/CmdDelegate");
+				CmdDelegateConstructor = Resolvers.ResolveMethod(CmdDelegateReference, scriptDef, ".ctor");
+				scriptDef.MainModule.ImportReference(gameObjectType);
+				scriptDef.MainModule.ImportReference(transformType);
 
-            MonoBehaviourType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.MonoBehaviour");
-            ScriptableObjectType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.ScriptableObject");
+				TypeReference unetViewTmp = mirrorAsmDef.MainModule.GetType("Mirror.NetworkIdentity");
+				NetworkIdentityType = scriptDef.MainModule.ImportReference(unetViewTmp);
 
-            NetworkConnectionType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.NetworkConnection");
-            NetworkConnectionType = scriptDef.MainModule.ImportReference(NetworkConnectionType);
+				NetworkBehaviourType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkBehaviour");
+				NetworkBehaviourType2 = scriptDef.MainModule.ImportReference(NetworkBehaviourType);
+				NetworkConnectionType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkConnection");
 
-            ULocalConnectionToServerType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.ULocalConnectionToServer");
-            ULocalConnectionToServerType = scriptDef.MainModule.ImportReference(ULocalConnectionToServerType);
+				MonoBehaviourType = unityAsmDef.MainModule.GetType("UnityEngine.MonoBehaviour");
+				ScriptableObjectType = unityAsmDef.MainModule.GetType("UnityEngine.ScriptableObject");
 
-            ULocalConnectionToClientType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.ULocalConnectionToClient");
-            ULocalConnectionToClientType = scriptDef.MainModule.ImportReference(ULocalConnectionToClientType);
+				NetworkConnectionType = mirrorAsmDef.MainModule.GetType("Mirror.NetworkConnection");
+				NetworkConnectionType = scriptDef.MainModule.ImportReference(NetworkConnectionType);
 
-            MessageBaseType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.MessageBase");
-            SyncListStructType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.SyncListSTRUCT`1");
+				ULocalConnectionToServerType = mirrorAsmDef.MainModule.GetType("Mirror.ULocalConnectionToServer");
+				ULocalConnectionToServerType = scriptDef.MainModule.ImportReference(ULocalConnectionToServerType);
 
-            NetworkBehaviourDirtyBitsReference = Resolvers.ResolveProperty(NetworkBehaviourType, scriptDef, "syncVarDirtyBits");
+				ULocalConnectionToClientType = mirrorAsmDef.MainModule.GetType("Mirror.ULocalConnectionToClient");
+				ULocalConnectionToClientType = scriptDef.MainModule.ImportReference(ULocalConnectionToClientType);
 
-            ComponentType = m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Component");
-            ClientSceneType = m_UNetAssemblyDefinition.MainModule.GetType("Mirror.ClientScene");
-            ReadyConnectionReference = Resolvers.ResolveMethod(ClientSceneType, scriptDef, "get_readyConnection");
+				MessageBaseType = mirrorAsmDef.MainModule.GetType("Mirror.MessageBase");
+				SyncListStructType = mirrorAsmDef.MainModule.GetType("Mirror.SyncListSTRUCT`1");
 
-            // get specialized GetComponent<NetworkIdentity>()
-            getComponentReference = Resolvers.ResolveMethodGeneric(ComponentType, scriptDef, "GetComponent", NetworkIdentityType);
+				NetworkBehaviourDirtyBitsReference = Resolvers.ResolveProperty(NetworkBehaviourType, scriptDef, "syncVarDirtyBits");
 
-            getUNetIdReference = Resolvers.ResolveMethod(unetViewTmp, scriptDef, "get_netId");
+				ComponentType = mirrorAsmDef.MainModule.GetType("UnityEngine.Component");
+				ClientSceneType = mirrorAsmDef.MainModule.GetType("Mirror.ClientScene");
+				ReadyConnectionReference = Resolvers.ResolveMethod(ClientSceneType, scriptDef, "get_readyConnection");
 
-            gameObjectInequality = Resolvers.ResolveMethod(unityObjectType, scriptDef, "op_Inequality");
+				// get specialized GetComponent<NetworkIdentity>()
+				getComponentReference = Resolvers.ResolveMethodGeneric(ComponentType, scriptDef, "GetComponent", NetworkIdentityType);
 
-            UBehaviourIsServer  = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "get_isServer");
-            setSyncVarReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SetSyncVar");
-            setSyncVarHookGuard = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "set_syncVarHookGuard");
-            getSyncVarHookGuard = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "get_syncVarHookGuard");
+				getUNetIdReference = Resolvers.ResolveMethod(unetViewTmp, scriptDef, "get_netId");
 
-            setSyncVarGameObjectReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SetSyncVarGameObject");
-            getSyncVarGameObjectReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "GetSyncVarGameObject");
-            setSyncVarNetworkIdentityReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SetSyncVarNetworkIdentity");
-            getSyncVarNetworkIdentityReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "GetSyncVarNetworkIdentity");
-            registerCommandDelegateReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "RegisterCommandDelegate");
-            registerRpcDelegateReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "RegisterRpcDelegate");
-            registerEventDelegateReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "RegisterEventDelegate");
-            getTypeReference = Resolvers.ResolveMethod(objectType, scriptDef, "GetType");
-            getTypeFromHandleReference = Resolvers.ResolveMethod(typeType, scriptDef, "GetTypeFromHandle");
-            logErrorReference = Resolvers.ResolveMethod(m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Debug"), scriptDef, "LogError");
-            logWarningReference = Resolvers.ResolveMethod(m_UnityAssemblyDefinition.MainModule.GetType("UnityEngine.Debug"), scriptDef, "LogWarning");
-            sendCommandInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendCommandInternal");
-            sendRpcInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendRPCInternal");
-            sendTargetRpcInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendTargetRPCInternal");
-            sendEventInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendEventInternal");
+				gameObjectInequality = Resolvers.ResolveMethod(unityObjectType, scriptDef, "op_Inequality");
 
-            SyncObjectType = scriptDef.MainModule.ImportReference(SyncObjectType);
-            InitSyncObjectReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "InitSyncObject");
+				UBehaviourIsServer = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "get_isServer");
+				setSyncVarReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SetSyncVar");
+				setSyncVarHookGuard = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "set_syncVarHookGuard");
+				getSyncVarHookGuard = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "get_syncVarHookGuard");
+
+				setSyncVarGameObjectReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SetSyncVarGameObject");
+				getSyncVarGameObjectReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "GetSyncVarGameObject");
+				setSyncVarNetworkIdentityReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SetSyncVarNetworkIdentity");
+				getSyncVarNetworkIdentityReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "GetSyncVarNetworkIdentity");
+				registerCommandDelegateReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "RegisterCommandDelegate");
+				registerRpcDelegateReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "RegisterRpcDelegate");
+				registerEventDelegateReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "RegisterEventDelegate");
+				getTypeReference = Resolvers.ResolveMethod(objectType, scriptDef, "GetType");
+				getTypeFromHandleReference = Resolvers.ResolveMethod(typeType, scriptDef, "GetTypeFromHandle");
+				logErrorReference = Resolvers.ResolveMethod(unityAsmDef.MainModule.GetType("UnityEngine.Debug"), scriptDef, "LogError");
+				logWarningReference = Resolvers.ResolveMethod(unityAsmDef.MainModule.GetType("UnityEngine.Debug"), scriptDef, "LogWarning");
+				sendCommandInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendCommandInternal");
+				sendRpcInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendRPCInternal");
+				sendTargetRpcInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendTargetRPCInternal");
+				sendEventInternal = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "SendEventInternal");
+
+				SyncObjectType = scriptDef.MainModule.ImportReference(SyncObjectType);
+				InitSyncObjectReference = Resolvers.ResolveMethod(NetworkBehaviourType, scriptDef, "InitSyncObject");
+			}
         }
 
-        static void SetupReadFunctions()
+        static void SetupReadFunctions(AssemblyDefinition scriptDef)
         {
             lists.readFuncs = new Dictionary<string, MethodReference>
             {
@@ -1206,7 +1211,7 @@ namespace Mirror.Weaver
             };
         }
 
-        static void SetupWriteFunctions()
+        static void SetupWriteFunctions(AssemblyDefinition scriptDef)
         {
             lists.writeFuncs = new Dictionary<string, MethodReference>
             {
@@ -1247,7 +1252,7 @@ namespace Mirror.Weaver
             return td.IsDerivedFrom(NetworkBehaviourType);
         }
 
-        public static bool IsValidTypeToGenerate(TypeDefinition variable)
+        public static bool IsValidTypeToGenerate(TypeDefinition variable, AssemblyDefinition scriptDef)
         {
             // a valid type is a simple class or struct. so we generate only code for types we dont know, and if they are not inside
             // this assembly it must mean that we are trying to serialize a variable outside our scope. and this will fail.
@@ -1392,117 +1397,123 @@ namespace Mirror.Weaver
             return didWork;
         }
 
-        static bool Weave(string assName, IEnumerable<string> dependencies, IAssemblyResolver assemblyResolver, string unityEngineDLLPath, string unityUNetDLLPath, string outputDir)
+        static bool Weave(string assName, 
+			IEnumerable<string> dependencies, 
+			IAssemblyResolver assemblyResolver, 
+			string unityEngineDLLPath, 
+			string unityUNetDLLPath, 
+			string outputDir,
+			AssemblyDefinition unityAsmDef,
+			AssemblyDefinition mirrorAsmDef)
         {
             ReaderParameters readParams = Helpers.ReaderParameters(assName, dependencies, assemblyResolver, unityEngineDLLPath, unityUNetDLLPath);
-            scriptDef = AssemblyDefinition.ReadAssembly(assName, readParams);
+			using (AssemblyDefinition scriptDef = AssemblyDefinition.ReadAssembly(assName, readParams))
+			{
+				SetupTargetTypes(unityAsmDef, mirrorAsmDef, scriptDef);
+				SetupReadFunctions(scriptDef);
+				SetupWriteFunctions(scriptDef);
 
-            SetupTargetTypes();
-            SetupReadFunctions();
-            SetupWriteFunctions();
+				ModuleDefinition moduleDefinition = scriptDef.MainModule;
+				Console.WriteLine("Script Module: {0}", moduleDefinition.Name);
 
-            ModuleDefinition moduleDefinition = scriptDef.MainModule;
-            Console.WriteLine("Script Module: {0}", moduleDefinition.Name);
+				// Process each NetworkBehaviour
+				bool didWork = false;
 
-            // Process each NetworkBehaviour
-            bool didWork = false;
+				// We need to do 2 passes, because SyncListStructs might be referenced from other modules, so we must make sure we generate them first.
+				for (int pass = 0; pass < 2; pass++)
+				{
+					System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+					foreach (TypeDefinition td in moduleDefinition.Types)
+					{
+						if (td.IsClass && td.BaseType.CanBeResolved())
+						{
+							try
+							{
+								if (pass == 0)
+								{
+									didWork |= CheckSyncListStruct(td);
+								} else
+								{
+									didWork |= CheckNetworkBehaviour(td);
+									didWork |= CheckMessageBase(td);
+								}
+							} catch (Exception ex)
+							{
+								if (scriptDef.MainModule.SymbolReader != null)
+									scriptDef.MainModule.SymbolReader.Dispose();
+								fail = true;
+								throw ex;
+							}
+						}
 
-            // We need to do 2 passes, because SyncListStructs might be referenced from other modules, so we must make sure we generate them first.
-            for (int pass = 0; pass < 2; pass++)
-            {
-                System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
-                foreach (TypeDefinition td in moduleDefinition.Types)
-                {
-                    if (td.IsClass && td.BaseType.CanBeResolved())
-                    {
-                        try
-                        {
-                            if (pass == 0)
-                            {
-                                didWork |= CheckSyncListStruct(td);
-                            }
-                            else
-                            {
-                                didWork |= CheckNetworkBehaviour(td);
-                                didWork |= CheckMessageBase(td);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            if (scriptDef.MainModule.SymbolReader != null)
-                                scriptDef.MainModule.SymbolReader.Dispose();
-                            fail = true;
-                            throw ex;
-                        }
-                    }
+						if (fail)
+						{
+							if (scriptDef.MainModule.SymbolReader != null)
+								scriptDef.MainModule.SymbolReader.Dispose();
+							return false;
+						}
+					}
+					watch.Stop();
+					Console.WriteLine("Pass: " + pass + " took " + watch.ElapsedMilliseconds + " milliseconds");
+				}
 
-                    if (fail)
-                    {
-                        if (scriptDef.MainModule.SymbolReader != null)
-                            scriptDef.MainModule.SymbolReader.Dispose();
-                        return false;
-                    }
-                }
-                watch.Stop();
-                Console.WriteLine("Pass: " + pass + " took " + watch.ElapsedMilliseconds + " milliseconds");
-            }
+				if (didWork)
+				{
+					// this must be done for ALL code, not just NetworkBehaviours
+					try
+					{
+						ProcessPropertySites();
+					} catch (Exception e)
+					{
+						Log.Error("ProcessPropertySites exception: " + e);
+						if (scriptDef.MainModule.SymbolReader != null)
+							scriptDef.MainModule.SymbolReader.Dispose();
+						return false;
+					}
 
-            if (didWork)
-            {
-                // this must be done for ALL code, not just NetworkBehaviours
-                try
-                {
-                    ProcessPropertySites();
-                }
-                catch (Exception e)
-                {
-                    Log.Error("ProcessPropertySites exception: " + e);
-                    if (scriptDef.MainModule.SymbolReader != null)
-                        scriptDef.MainModule.SymbolReader.Dispose();
-                    return false;
-                }
+					if (fail)
+					{
+						//Log.Error("Failed phase II.");
+						if (scriptDef.MainModule.SymbolReader != null)
+							scriptDef.MainModule.SymbolReader.Dispose();
+						return false;
+					}
 
-                if (fail)
-                {
-                    //Log.Error("Failed phase II.");
-                    if (scriptDef.MainModule.SymbolReader != null)
-                        scriptDef.MainModule.SymbolReader.Dispose();
-                    return false;
-                }
+					string dest = Helpers.DestinationFileFor(outputDir, assName);
+					//Console.WriteLine ("Output:" + dest);
 
-                string dest = Helpers.DestinationFileFor(outputDir, assName);
-                //Console.WriteLine ("Output:" + dest);
+					WriterParameters writeParams = Helpers.GetWriterParameters(readParams);
 
-                WriterParameters writeParams = Helpers.GetWriterParameters(readParams);
+					// PdbWriterProvider uses ISymUnmanagedWriter2 COM interface but Mono can't invoke a method on it and crashes (actually it first throws the following exception and then crashes).
+					// One solution would be to convert UNetWeaver to exe file and run it on .NET on Windows (I have tested that and it works).
+					// However it's much more simple to just write mdb file.
+					// System.NullReferenceException: Object reference not set to an instance of an object
+					//   at(wrapper cominterop - invoke) Mono.Cecil.Pdb.ISymUnmanagedWriter2:DefineDocument(string, System.Guid &, System.Guid &, System.Guid &, Mono.Cecil.Pdb.ISymUnmanagedDocumentWriter &)
+					//   at Mono.Cecil.Pdb.SymWriter.DefineDocument(System.String url, Guid language, Guid languageVendor, Guid documentType)[0x00000] in < filename unknown >:0
+					//if (writeParams.SymbolWriterProvider is PdbWriterProvider)
+					//{
+					//	writeParams.SymbolWriterProvider = new MdbWriterProvider();
+					//	// old pdb file is out of date so delete it. symbols will be stored in mdb
+					//	string pdb = Path.ChangeExtension(assName, ".pdb");
 
-                // PdbWriterProvider uses ISymUnmanagedWriter2 COM interface but Mono can't invoke a method on it and crashes (actually it first throws the following exception and then crashes).
-                // One solution would be to convert UNetWeaver to exe file and run it on .NET on Windows (I have tested that and it works).
-                // However it's much more simple to just write mdb file.
-                // System.NullReferenceException: Object reference not set to an instance of an object
-                //   at(wrapper cominterop - invoke) Mono.Cecil.Pdb.ISymUnmanagedWriter2:DefineDocument(string, System.Guid &, System.Guid &, System.Guid &, Mono.Cecil.Pdb.ISymUnmanagedDocumentWriter &)
-                //   at Mono.Cecil.Pdb.SymWriter.DefineDocument(System.String url, Guid language, Guid languageVendor, Guid documentType)[0x00000] in < filename unknown >:0
-                if (writeParams.SymbolWriterProvider is PdbWriterProvider)
-                {
-                    writeParams.SymbolWriterProvider = new MdbWriterProvider();
-                    // old pdb file is out of date so delete it. symbols will be stored in mdb
-                    string pdb = Path.ChangeExtension(assName, ".pdb");
+					//	try
+					//	{
+					//		File.Delete(pdb);
+					//	} catch (Exception ex)
+					//	{
+					//		// workaround until Unity fixes C#7 compiler compability with the UNET weaver
+					//		UnityEngine.Debug.LogWarning(string.Format("Unable to delete file {0}: {1}", pdb, ex.Message));
+					//	}
+					//}
 
-                    try
-                    {
-                        File.Delete(pdb);
-                    }
-                    catch (Exception ex)
-                    {
-                        // workaround until Unity fixes C#7 compiler compability with the UNET weaver
-                        UnityEngine.Debug.LogWarning(string.Format("Unable to delete file {0}: {1}", pdb, ex.Message));
-                    }
-                }
+					scriptDef.Write(dest, writeParams);
+				}
 
-                scriptDef.Write(dest, writeParams);
-            }
-
-            if (scriptDef.MainModule.SymbolReader != null)
-                scriptDef.MainModule.SymbolReader.Dispose();
+				if (scriptDef.MainModule.SymbolReader != null)
+				{
+					scriptDef.MainModule.SymbolReader.Dispose();
+				}
+			}
 
             return true;
         }
@@ -1512,27 +1523,27 @@ namespace Mirror.Weaver
             fail = false;
             lists = new WeaverLists();
 
-            m_UnityAssemblyDefinition = AssemblyDefinition.ReadAssembly(unityEngineDLLPath);
-            m_UNetAssemblyDefinition = AssemblyDefinition.ReadAssembly(unityUNetDLLPath);
+			using (AssemblyDefinition unityAsmDef = AssemblyDefinition.ReadAssembly(unityEngineDLLPath))
+			using (AssemblyDefinition mirrorAsmDef = AssemblyDefinition.ReadAssembly(unityUNetDLLPath))
+			{
 
-            SetupUnityTypes();
+				SetupUnityTypes(unityAsmDef, mirrorAsmDef);
 
-            try
-            {
-                foreach (string ass in assemblies)
-                {
-                    if (!Weave(ass, dependencies, assemblyResolver, unityEngineDLLPath, unityUNetDLLPath, outputDir))
-                    {
-                        return false;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error("Exception :" + e);
-                return false;
-            }
-            corLib = null;
+				try
+				{
+					foreach (string ass in assemblies)
+					{
+						if (!Weave(ass, dependencies, assemblyResolver, unityEngineDLLPath, unityUNetDLLPath, outputDir, unityAsmDef, mirrorAsmDef))
+						{
+							return false;
+						}
+					}
+				} catch (Exception e)
+				{
+					Log.Error("Exception :" + e);
+					return false;
+				}
+			}
             return true;
         }
     }
