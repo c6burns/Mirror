@@ -600,7 +600,7 @@ namespace Mirror
         }
 
         // helper function to handle SyncEvent/Command/Rpc
-        internal void HandleRemoteCall(int componentIndex, int functionHash, UNetInvokeType invokeType, NetworkReader reader)
+        internal void HandleRemoteCall(int componentIndex, int functionHash, NetInvokeType invokeType, NetworkReader reader)
         {
             if (gameObject == null)
             {
@@ -626,19 +626,19 @@ namespace Mirror
         // happens on client
         internal void HandleSyncEvent(int componentIndex, int eventHash, NetworkReader reader)
         {
-            HandleRemoteCall(componentIndex, eventHash, UNetInvokeType.SyncEvent, reader);
+            HandleRemoteCall(componentIndex, eventHash, NetInvokeType.SyncEvent, reader);
         }
 
         // happens on server
         internal void HandleCommand(int componentIndex, int cmdHash, NetworkReader reader)
         {
-            HandleRemoteCall(componentIndex, cmdHash, UNetInvokeType.Command, reader);
+            HandleRemoteCall(componentIndex, cmdHash, NetInvokeType.Command, reader);
         }
 
         // happens on client
         internal void HandleRPC(int componentIndex, int rpcHash, NetworkReader reader)
         {
-            HandleRemoteCall(componentIndex, rpcHash, UNetInvokeType.ClientRpc, reader);
+            HandleRemoteCall(componentIndex, rpcHash, NetInvokeType.ClientRpc, reader);
         }
 
         internal void OnUpdateVars(NetworkReader reader, bool initialState)
@@ -938,7 +938,7 @@ namespace Mirror
         }
 
         // invoked by unity runtime immediately after the regular "Update()" function.
-        internal void UNetUpdate()
+        internal void NetUpdate()
         {
             // SendToReady sends to all observers. no need to serialize if we
             // don't have any.
@@ -961,7 +961,7 @@ namespace Mirror
         }
 
         // this is invoked by the UnityEngine
-        public static void UNetStaticUpdate()
+        public static void NetStaticUpdate()
         {
             NetworkServer.Update();
             NetworkClient.UpdateClients();

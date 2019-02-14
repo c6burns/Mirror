@@ -85,20 +85,27 @@ namespace Mirror.Weaver
             return type.Name;
         }
 
-        public static ReaderParameters ReaderParameters(string assemblyPath, IEnumerable<string> extraPaths, IAssemblyResolver assemblyResolver, string unityEngineDLLPath, string unityUNetDLLPath)
+        public static ReaderParameters ReaderParameters(string assemblyPath, IEnumerable<string> extraPaths, IAssemblyResolver assemblyResolver, string unityEngineDLLPath, string unityNetDLLPath)
         {
             ReaderParameters parameters = new ReaderParameters();
             if (assemblyResolver == null)
+            {
                 assemblyResolver = new DefaultAssemblyResolver();
+            }
+
             AddSearchDirectoryHelper helper = new AddSearchDirectoryHelper(assemblyResolver);
             helper.AddSearchDirectory(Path.GetDirectoryName(assemblyPath));
             helper.AddSearchDirectory(UnityEngineDLLDirectoryName());
             helper.AddSearchDirectory(Path.GetDirectoryName(unityEngineDLLPath));
-            helper.AddSearchDirectory(Path.GetDirectoryName(unityUNetDLLPath));
+            helper.AddSearchDirectory(Path.GetDirectoryName(unityNetDLLPath));
             if (extraPaths != null)
             {
-                foreach (var path in extraPaths)
+                // ~200 paths get passed in here and we only need the unique ones
+                HashSet<string> pathHashSet = new HashSet<string>(extraPaths);
+                foreach (var path in pathHashSet.ToArray())
+                {
                     helper.AddSearchDirectory(path);
+                }
             }
             parameters.AssemblyResolver = assemblyResolver;
             parameters.SymbolReaderProvider = GetSymbolReaderProvider(assemblyPath);

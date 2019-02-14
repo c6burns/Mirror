@@ -107,7 +107,7 @@ namespace Mirror
         [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual bool InvokeCommand(int cmdHash, NetworkReader reader)
         {
-            return InvokeHandlerDelegate(cmdHash, UNetInvokeType.Command, reader);
+            return InvokeHandlerDelegate(cmdHash, NetInvokeType.Command, reader);
         }
 
         // ----------------------------- Client RPCs --------------------------------
@@ -159,7 +159,7 @@ namespace Mirror
         [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual bool InvokeRPC(int rpcHash, NetworkReader reader)
         {
-            return InvokeHandlerDelegate(rpcHash, UNetInvokeType.ClientRpc, reader);
+            return InvokeHandlerDelegate(rpcHash, NetInvokeType.ClientRpc, reader);
         }
 
         // ----------------------------- Sync Events --------------------------------
@@ -188,7 +188,7 @@ namespace Mirror
         [EditorBrowsable(EditorBrowsableState.Never)]
         public virtual bool InvokeSyncEvent(int eventHash, NetworkReader reader)
         {
-            return InvokeHandlerDelegate(eventHash, UNetInvokeType.SyncEvent, reader);
+            return InvokeHandlerDelegate(eventHash, NetInvokeType.SyncEvent, reader);
         }
 
         // ----------------------------- Code Gen Path Helpers  --------------------------------
@@ -197,7 +197,7 @@ namespace Mirror
 
         protected class Invoker
         {
-            public UNetInvokeType invokeType;
+            public NetInvokeType invokeType;
             public Type invokeClass;
             public CmdDelegate invokeFunction;
         }
@@ -206,7 +206,7 @@ namespace Mirror
 
         // helper function register a Command/Rpc/SyncEvent delegate
         [EditorBrowsable(EditorBrowsableState.Never)]
-        protected static void RegisterDelegate(Type invokeClass, string cmdName, UNetInvokeType invokerType, CmdDelegate func)
+        protected static void RegisterDelegate(Type invokeClass, string cmdName, NetInvokeType invokerType, CmdDelegate func)
         {
             int cmdHash = (invokeClass + ":" + cmdName).GetStableHashCode(); // type+func so Inventory.RpcUse != Equipment.RpcUse
 
@@ -240,22 +240,22 @@ namespace Mirror
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected static void RegisterCommandDelegate(Type invokeClass, string cmdName, CmdDelegate func)
         {
-            RegisterDelegate(invokeClass, cmdName, UNetInvokeType.Command, func);
+            RegisterDelegate(invokeClass, cmdName, NetInvokeType.Command, func);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected static void RegisterRpcDelegate(Type invokeClass, string rpcName, CmdDelegate func)
         {
-            RegisterDelegate(invokeClass, rpcName, UNetInvokeType.ClientRpc, func);
+            RegisterDelegate(invokeClass, rpcName, NetInvokeType.ClientRpc, func);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected static void RegisterEventDelegate(Type invokeClass, string eventName, CmdDelegate func)
         {
-            RegisterDelegate(invokeClass, eventName, UNetInvokeType.SyncEvent, func);
+            RegisterDelegate(invokeClass, eventName, NetInvokeType.SyncEvent, func);
         }
 
-        static bool GetInvokerForHash(int cmdHash, UNetInvokeType invokeType, out Invoker invoker)
+        static bool GetInvokerForHash(int cmdHash, NetInvokeType invokeType, out Invoker invoker)
         {
             if (s_CmdHandlerDelegates.TryGetValue(cmdHash, out invoker) &&
                 invoker != null &&
@@ -272,7 +272,7 @@ namespace Mirror
         }
 
         // InvokeCmd/Rpc/SyncEventDelegate can all use the same function here
-        internal bool InvokeHandlerDelegate(int cmdHash, UNetInvokeType invokeType, NetworkReader reader)
+        internal bool InvokeHandlerDelegate(int cmdHash, NetInvokeType invokeType, NetworkReader reader)
         {
             Invoker invoker;
             if (GetInvokerForHash(cmdHash, invokeType, out invoker) &&

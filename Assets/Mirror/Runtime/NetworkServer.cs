@@ -264,7 +264,7 @@ namespace Mirror
             {
                 if (kvp.Value != null && kvp.Value.gameObject != null)
                 {
-                    kvp.Value.UNetUpdate();
+                    kvp.Value.NetUpdate();
                 }
                 else
                 {
@@ -390,7 +390,7 @@ namespace Mirror
 
         static void GenerateConnectError(byte error)
         {
-            Debug.LogError("UNet Server Connect Error: " + error);
+            Debug.LogError("Mirror Server Connect Error: " + error);
             GenerateError(null, error);
         }
 
@@ -398,14 +398,14 @@ namespace Mirror
         static void GenerateDataError(NetworkConnection conn, byte error)
         {
             NetworkError dataError = (NetworkError)error;
-            Debug.LogError("UNet Server Data Error: " + dataError);
+            Debug.LogError("Mirror Server Data Error: " + dataError);
             GenerateError(conn, error);
         }
 
         static void GenerateDisconnectError(NetworkConnection conn, byte error)
         {
             NetworkError disconnectError = (NetworkError)error;
-            Debug.LogError("UNet Server Disconnect Error: " + disconnectError + " conn:[" + conn + "]:" + conn.connectionId);
+            Debug.LogError("Mirror Server Disconnect Error: " + disconnectError + " conn:[" + conn + "]:" + conn.connectionId);
             GenerateError(conn, error);
         }
         */

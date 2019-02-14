@@ -57,7 +57,7 @@ namespace Mirror
         public int numPlayers => NetworkServer.connections.Count(kv => kv.Value.playerController != null);
 
         // runtime data
-        public static string networkSceneName = ""; // this is used to make sure that all scene changes are initialized by UNET. loading a scene manually wont set networkSceneName, so UNET would still load it again on start.
+        public static string networkSceneName = ""; // this is used to make sure that all scene changes are initialized by Mirror. loading a scene manually wont set networkSceneName, so Mirror would still load it again on start.
         [NonSerialized]
         public bool isNetworkActive;
         public NetworkClient client;
@@ -129,7 +129,7 @@ namespace Mirror
             }
         }
 
-        // NetworkIdentity.UNetStaticUpdate is called from UnityEngine while LLAPI network is active.
+        // NetworkIdentity.NetStaticUpdate is called from UnityEngine while LLAPI network is active.
         // if we want TCP then we need to call it manually. probably best from NetworkManager, although this means
         // that we can't use NetworkServer/NetworkClient without a NetworkManager invoking Update anymore.
         //
@@ -139,7 +139,7 @@ namespace Mirror
             // call it while the NetworkManager exists.
             // -> we don't only call while Client/Server.Connected, because then we would stop if disconnected and the
             //    NetworkClient wouldn't receive the last Disconnect event, result in all kinds of issues
-            NetworkIdentity.UNetStaticUpdate();
+            NetworkIdentity.NetStaticUpdate();
         }
 
         // When pressing Stop in the Editor, Unity keeps threads alive until we

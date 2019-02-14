@@ -7,12 +7,20 @@ using UnityEditor.Compilation;
 using System;
 using System.Linq;
 
+
+// disable unreachable code warnings so we can use constants to switch debug logging on/off without raising alarms
+// they get switched back on at the bottom, so only this class ignores the warning
+#pragma warning disable CS0162
+
 namespace Mirror.Weaver
 {
     // InitializeOnLoad is needed for Unity to call the static constructor on load
     [InitializeOnLoad]
     public class CompilationFinishedHook
     {
+        const bool m_kLogWeavingStart = false;
+        const bool m_kLogWeavingIssue = true;
+        const bool m_kLogWeavingWork = true;
         static CompilationFinishedHook()
         {
             try
@@ -36,7 +44,7 @@ namespace Mirror.Weaver
 
             foreach (Assembly assembly in assemblies)
             {
-                Debug.Log("Weaving " + assembly.outputPath);
+                if (m_kLogWeavingStart) Debug.Log("Weaving " + assembly.outputPath);
                 AssemblyCompilationFinishedHandler(assembly.outputPath, new CompilerMessage[] { } );               
             }
         }
@@ -48,7 +56,7 @@ namespace Mirror.Weaver
             // file won't exist. in that case, do nothing.
             if (!File.Exists(assemblyPath))
             {
-                Console.WriteLine("Weaving skipped because assembly doesnt exist: " + assemblyPath);
+                if (m_kLogWeavingIssue) Console.WriteLine("Weaving skipped because assembly doesnt exist: " + assemblyPath);
                 return;
             }
 
@@ -134,3 +142,6 @@ namespace Mirror.Weaver
         }
     }
 }
+
+// turn unreachable code warnings back on
+#pragma warning restore CS0162
