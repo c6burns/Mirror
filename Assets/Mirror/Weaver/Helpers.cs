@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Mdb;
-using Mono.Cecil.Pdb;
+using Mono.MirrorCecil;
+using Mono.MirrorCecil.Cil;
+using Mono.MirrorCecil.Mdb;
+using Mono.MirrorCecil.Pdb;
 
 namespace Mirror.Weaver
 {

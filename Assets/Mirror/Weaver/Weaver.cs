@@ -2,11 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
+using Mono.MirrorCecil;
+using Mono.MirrorCecil.Cil;
 using System.Linq;
-using Mono.Cecil.Pdb;
-using Mono.Cecil.Mdb;
+using Mono.MirrorCecil.Pdb;
+using Mono.MirrorCecil.Mdb;
 
 namespace Mirror.Weaver
 {
@@ -872,7 +872,7 @@ namespace Mirror.Weaver
         {
             if (!IsNetworkBehaviour(td))
             {
-                Log.Error("[Server] guard on non-NetworkBehaviour script at [" + md.FullName + "]");
+                Log.Warning("[Server] guard on non-NetworkBehaviour script at [" + md.FullName + "]");
                 return;
             }
             ILProcessor worker = md.Body.GetILProcessor();
@@ -894,7 +894,7 @@ namespace Mirror.Weaver
         {
             if (!IsNetworkBehaviour(td))
             {
-                Log.Error("[Client] guard on non-NetworkBehaviour script at [" + md.FullName + "]");
+                Log.Warning("[Client] guard on non-NetworkBehaviour script at [" + md.FullName + "]");
                 return;
             }
             ILProcessor worker = md.Body.GetILProcessor();
@@ -1140,9 +1140,10 @@ namespace Mirror.Weaver
 			ULocalConnectionToClientType = Weaver.CurrentAssembly.MainModule.ImportReference(ULocalConnectionToClientType);
 
 			MessageBaseType = Weaver.NetAssembly.MainModule.GetType("Mirror.MessageBase");
-			SyncListStructType = Weaver.NetAssembly.MainModule.GetType("Mirror.SyncListSTRUCT`1");
+            //SyncListStructType = Weaver.NetAssembly.MainModule.GetType("Mirror.SyncListSTRUCT`1");
+            SyncListStructType = Weaver.NetAssembly.MainModule.GetType("Mirror.SyncListSTRUCT`1");
 
-			NetworkBehaviourDirtyBitsReference = Resolvers.ResolveProperty(NetworkBehaviourType, Weaver.CurrentAssembly, "syncVarDirtyBits");
+            NetworkBehaviourDirtyBitsReference = Resolvers.ResolveProperty(NetworkBehaviourType, Weaver.CurrentAssembly, "syncVarDirtyBits");
 
 			ComponentType = Weaver.UnityAssembly.MainModule.GetType("UnityEngine.Component");
 			ClientSceneType = Weaver.NetAssembly.MainModule.GetType("Mirror.ClientScene");
@@ -1494,11 +1495,16 @@ namespace Mirror.Weaver
 
             try
             {
+                // after each call to Weave, we must guarantee DisposeCurrentAssembly is called afterwards
                 foreach (string ass in assemblies)
                 {
-                    bool rv = Weave(ass, dependencies, assemblyResolver, unityEngineDLLPath, unityNetDLLPath, outputDir);
-                    DisposeCurrentAssembly();
-                    if (!rv) return false;
+                    if (!Weave(ass, dependencies, assemblyResolver, unityEngineDLLPath, unityNetDLLPath, outputDir))
+                    {
+                        // current assembly will be disposed during cleanup
+                        return false; 
+                    }
+
+                    DisposeCurrentAssembly(); 
                 }
             } catch (Exception e)
             {
