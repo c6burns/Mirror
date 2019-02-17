@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace Mirror.Tests
@@ -167,6 +168,40 @@ namespace Mirror.Tests
             Assert.That(reader.ReadDouble(), Is.EqualTo(11));
             Assert.That(reader.ReadDecimal(), Is.EqualTo(12));
             Assert.That(reader.ReadString(), Is.Null); // writing null string should write null in HLAPI Pro ("" in original HLAPI)
+            Assert.That(reader.ReadString(), Is.EqualTo(""));
+            Assert.That(reader.ReadString(), Is.EqualTo("13"));
+
+            Assert.That(reader.ReadBytes(2), Is.EqualTo(new byte[] { 14, 15 }));
+
+            Assert.That(reader.ReadBytesAndSize(), Is.Null);
+
+            Assert.That(reader.ReadBytesAndSize(), Is.EqualTo(new byte[] { 17, 18 }));
+
+            Assert.That(reader.ReadBytesAndSize(), Is.EqualTo(new byte[] { 20, 21 }));
+
+            Assert.That(reader.ReadBytesAndSize(), Is.EqualTo(new byte[] { 22, 23 }));
+        }
+
+
+        [Test]
+        public void TestBinaryReadCompatibility()
+        {
+            NetworkReader reader = new NetworkReader(File.ReadAllBytes("Assets/Mirror/Tests/TestBinaryCompatMessage.bytes"));
+
+            Assert.That(reader.ReadChar(), Is.EqualTo(1));
+            Assert.That(reader.ReadByte(), Is.EqualTo(2));
+            Assert.That(reader.ReadSByte(), Is.EqualTo(3));
+            Assert.That(reader.ReadBoolean(), Is.True);
+            Assert.That(reader.ReadInt16(), Is.EqualTo(4));
+            Assert.That(reader.ReadUInt16(), Is.EqualTo(5));
+            Assert.That(reader.ReadInt32(), Is.EqualTo(6));
+            Assert.That(reader.ReadUInt32(), Is.EqualTo(7));
+            Assert.That(reader.ReadInt64(), Is.EqualTo(8));
+            Assert.That(reader.ReadUInt64(), Is.EqualTo(9));
+            Assert.That(reader.ReadSingle(), Is.EqualTo(10));
+            Assert.That(reader.ReadDouble(), Is.EqualTo(11));
+            Assert.That(reader.ReadDecimal(), Is.EqualTo(12));
+            Assert.That(reader.ReadString(), Is.Null);
             Assert.That(reader.ReadString(), Is.EqualTo(""));
             Assert.That(reader.ReadString(), Is.EqualTo("13"));
 
