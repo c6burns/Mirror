@@ -1,6 +1,8 @@
 {
     "name": "Mirror",
-    "references": [],
+    "references": [
+        "Mirror.Buffers"
+    ],
     "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -11,10 +11,10 @@ namespace Mirror.Buffers
         #region AquiredRef and AquiredRef internal classes
         internal class AcquiredRef<T>
         {
-            private readonly T _classRef;
+            readonly T _classRef;
 #if MIRROR_BUFFER_STACK_DEBUG
-            private readonly string _allocStack;
-            private readonly DateTime _allocTime;
+            readonly string _allocStack;
+            readonly DateTime _allocTime;
 #endif
 
             public AcquiredRef(T classInstance)
@@ -46,8 +46,8 @@ namespace Mirror.Buffers
 
         internal class AcquiredRefList<T>
         {
-            private Dictionary<T, AcquiredRef<T>> _refMap = new Dictionary<T, AcquiredRef<T>>();
-            private Stack<AcquiredRef<T>> _refFreeStack = new Stack<AcquiredRef<T>>();
+            Dictionary<T, AcquiredRef<T>> _refMap = new Dictionary<T, AcquiredRef<T>>();
+            Stack<AcquiredRef<T>> _refFreeStack = new Stack<AcquiredRef<T>>();
             public T Acquire()
             {
                 if (_refFreeStack.Count > 0)
@@ -101,10 +101,10 @@ namespace Mirror.Buffers
         #endregion
 
 
-        private static BufferAllocator _defaultBufferAllocator = new BufferAllocator();
-        private static IBufferAllocator _bufferAllocator = _defaultBufferAllocator;
-        private static AcquiredRefList<NetworkWriter> _writerList = new AcquiredRefList<NetworkWriter>();
-        private static AcquiredRefList<NetworkReader> _readerList = new AcquiredRefList<NetworkReader>();
+        static BufferAllocator _defaultBufferAllocator = new BufferAllocator();
+        static IBufferAllocator _bufferAllocator = _defaultBufferAllocator;
+        static AcquiredRefList<NetworkWriter> _writerList = new AcquiredRefList<NetworkWriter>();
+        static AcquiredRefList<NetworkReader> _readerList = new AcquiredRefList<NetworkReader>();
 
         static BufferManager()
         {
@@ -124,12 +124,12 @@ namespace Mirror.Buffers
             }
         }
 
-        public static IBuffer AcquireBuffer(int minSizeInBytes)
+        public static IBuffer AcquireBuffer(ulong minSizeInBytes)
         {
             return _bufferAllocator.Acquire(minSizeInBytes);
         }
 
-        public static IBuffer ReacquireBuffer(IBuffer rentedBuffer, int newMinSizeInBytes)
+        public static IBuffer ReacquireBuffer(IBuffer rentedBuffer, ulong newMinSizeInBytes)
         {
             return _bufferAllocator.Reacquire(rentedBuffer, newMinSizeInBytes);
         }
@@ -141,13 +141,13 @@ namespace Mirror.Buffers
 
         public static NetworkWriter AcquireWriter()
         {
-            NetworkWriter rv = _writerList.Acquire();
-            if (rv == null)
+            NetworkWriter writer = _writerList.Acquire();
+            if (writer == null)
             {
-                rv = new NetworkWriter();
-                _writerList.Add(rv);
+                writer = new NetworkWriter();
+                _writerList.Add(writer);
             }
-            return rv;
+            return writer;
         }
 
         public static void ReleaseWriter(NetworkWriter writer)
@@ -157,13 +157,17 @@ namespace Mirror.Buffers
 
         public static NetworkReader AcquireReader(byte[] buffer)
         {
-            NetworkReader rv = _readerList.Acquire();
-            if (rv == null)
+            NetworkReader reader = _readerList.Acquire();
+            if (reader == null)
             {
-                rv = new NetworkReader(buffer);
-                _readerList.Add(rv);
+                reader = new NetworkReader(buffer);
+                _readerList.Add(reader);
             }
-            return rv;
+            else
+            {
+                // TODO: insert buffer into reader
+            }
+            return reader;
         }
 
         public static void ReleaseReader(NetworkReader reader)
