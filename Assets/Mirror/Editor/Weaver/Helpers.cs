@@ -89,7 +89,9 @@ namespace Mirror.Weaver
         {
             ReaderParameters parameters = new ReaderParameters() {ReadWrite = true};
             if (assemblyResolver == null)
+            {
                 assemblyResolver = new DefaultAssemblyResolver();
+            }
             AddSearchDirectoryHelper helper = new AddSearchDirectoryHelper(assemblyResolver);
             helper.AddSearchDirectory(Path.GetDirectoryName(assemblyPath));
             helper.AddSearchDirectory(UnityEngineDLLDirectoryName());
@@ -98,7 +100,9 @@ namespace Mirror.Weaver
             if (extraPaths != null)
             {
                 foreach (var path in extraPaths)
+                {
                     helper.AddSearchDirectory(path);
+                }
             }
             parameters.AssemblyResolver = assemblyResolver;
             parameters.SymbolReaderProvider = GetSymbolReaderProvider(assemblyPath);

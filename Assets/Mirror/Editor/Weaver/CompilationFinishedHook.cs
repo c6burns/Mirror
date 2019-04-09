@@ -116,12 +116,19 @@ namespace Mirror.Weaver
                 return;
             }
 
-            // don't weave mirror files
+            // don't weave Mirror.dll
             string assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
-            if (assemblyName == MirrorRuntimeAssemblyName || assemblyName == MirrorWeaverAssemblyName)
+            if (assemblyName == MirrorRuntimeAssemblyName)
             {
                 return;
             }
+
+            // if Weaver was in the pipeline it means it has been updated, and everything needs to be reweaved
+            if (assemblyName == MirrorWeaverAssemblyName)
+            {
+                return;
+            }
+
 
             // find Mirror.dll
             string mirrorRuntimeDll = FindMirrorRuntime();
@@ -186,7 +193,7 @@ namespace Mirror.Weaver
             string outputDirectory = Path.Combine(projectDirectory, Path.GetDirectoryName(assemblyPath));
 
             //if (UnityLogEnabled) Debug.Log("Weaving: " + assemblyPath); // uncomment to easily observe weave targets
-            if (Program.Process(unityEngineCoreModuleDLL, mirrorRuntimeDll, outputDirectory, new[] { assemblyPath }, dependencyPaths.ToArray(), HandleWarning, HandleError))
+            if (Program.Process(unityEngineCoreModuleDLL, mirrorRuntimeDll, new[] { assemblyPath }, dependencyPaths.ToArray(), HandleWarning, HandleError))
             {
                 WeaveFailed = false;
                 Debug.Log("Weaving succeeded for: " + assemblyPath);
