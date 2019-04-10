@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor.Compilation;
 using Mono.Cecil;
@@ -11,32 +13,27 @@ namespace Mirror
     {
         // loosely coupled to WeaverAssembler for now
         public const string OutputBaseDirectory = WeaverAssembler.OutputBaseDirectory;
+        public const string OutputTempDirectory = WeaverAssembler.OutputBaseDirectory + "Temp/";
 
         // caches CompilationPipeline.Assemblies
         public static Assembly[] PipelineAssemblies { get; private set; }
+
+        // all directories for resolver
+        public static string[] ReferenceDirectories { get; private set; }
 
         // key assemblies guaranteed to be in CompilationPipeline
         public static Assembly MainAssembly { get; private set; }
         public static Assembly MirrorAssembly { get; private set; }
         public static Assembly MirrorTestsAssembly { get; private set; }
 
-        // required AssemblyDefinitions
-        public static AssemblyDefinition MainAsmDef { get; private set; }
-        public static AssemblyDefinition MirrorAsmDef { get; private set; }
-        public static AssemblyDefinition MirrorTestsAsmDef { get; private set; }
-        public static AssemblyDefinition UnityEngineAsmDef { get; private set; }
-        public static AssemblyDefinition UnityEngineCoreAsmDef { get; private set; }
-        public static AssemblyDefinition UnityEditorAsmDef { get; private set; }
+        public static string MirrorMockAssemblyPath { get; private set; }
+        public static string MainAssemblyPath { get; private set; }
+        public static string MirrorAssemblyPath { get; private set; }
+        public static string MirrorTestsAssemblyPath { get; private set; }
+        public static string UnityEngineAssemblyPath { get; private set; }
+        public static string UnityEngineCoreAssemblyPath { get; private set; }
+        public static string UnityEditorAssemblyPath { get; private set; }
 
-        // required ModuleDefinitions
-        public static ModuleDefinition MainModDef { get; private set; }
-        public static ModuleDefinition MirrorModDef { get; private set; }
-        public static ModuleDefinition MirrorTestsModDef { get; private set; }
-        public static ModuleDefinition UnityEngineModDef { get; private set; }
-        public static ModuleDefinition UnityEngineCoreModDef { get; private set; }
-        public static ModuleDefinition UnityEditorModDef { get; private set; }
-
-        // required TypeDefinitions
         public static TypeDefinition MockMBTypeDef { get; private set; }
         public static TypeDefinition MBTypeDef { get; private set; }
         public static TypeDefinition NBTypeDef { get; private set; }
@@ -47,144 +44,171 @@ namespace Mirror
             Setup();
         }
 
-        private static void AssignAssemblies()
+        private static void AssignAssemblyPaths()
         {
             PipelineAssemblies = CompilationPipeline.GetAssemblies();
+            HashSet<string> refPaths = new HashSet<string>();
             foreach (Assembly asm in PipelineAssemblies)
             {
-                Debug.LogFormat("{0}", asm.name);
+                foreach (string refPath in asm.compiledAssemblyReferences)
+                {
+                    refPaths.Add(Path.GetDirectoryName(refPath));
+                }
+                refPaths.Add(Path.GetDirectoryName(asm.outputPath));
+
                 switch (asm.name)
                 {
                     case "Mirror":
                         MirrorAssembly = asm;
-                        MirrorAsmDef = AssemblyDefinition.ReadAssembly(MirrorAssembly.outputPath);
+                        MirrorAssemblyPath = MirrorAssembly.outputPath;
                         break;
                     case "Mirror.Tests":
                         MirrorTestsAssembly = asm;
-                        MirrorTestsAsmDef = AssemblyDefinition.ReadAssembly(MirrorAssembly.outputPath);
+                        MirrorTestsAssemblyPath = MirrorAssembly.outputPath;
                         break;
                     case "Assembly-CSharp":
                         MainAssembly = asm;
-                        MainAsmDef = AssemblyDefinition.ReadAssembly(MainAssembly.outputPath);
+                        MainAssemblyPath = MainAssembly.outputPath;
                         break;
                 }
             }
+            ReferenceDirectories = new string[refPaths.Count];
+            refPaths.CopyTo(ReferenceDirectories);
 
-            string fullpath;
-            fullpath = UnityEditorInternal.InternalEditorUtility.GetEditorAssemblyPath();
-            if (!string.IsNullOrEmpty(fullpath))
-            {
-                UnityEditorAsmDef = AssemblyDefinition.ReadAssembly(fullpath);
-            }
+            UnityEditorAssemblyPath = UnityEditorInternal.InternalEditorUtility.GetEditorAssemblyPath();
+            UnityEngineAssemblyPath = UnityEditorInternal.InternalEditorUtility.GetEngineAssemblyPath();
+            UnityEngineCoreAssemblyPath = UnityEditorInternal.InternalEditorUtility.GetEngineCoreModuleAssemblyPath();
 
-            fullpath = UnityEditorInternal.InternalEditorUtility.GetEngineAssemblyPath();
-            if (!string.IsNullOrEmpty(fullpath))
-            {
-                UnityEngineAsmDef = AssemblyDefinition.ReadAssembly(fullpath);
-            }
-
-            fullpath = UnityEditorInternal.InternalEditorUtility.GetEngineCoreModuleAssemblyPath();
-            if (!string.IsNullOrEmpty(fullpath))
-            {
-                UnityEngineCoreAsmDef = AssemblyDefinition.ReadAssembly(fullpath);
-            }
-
-
-            if (MirrorAsmDef == null)
+            if (string.IsNullOrEmpty(MirrorAssemblyPath))
             {
                 throw new InvalidOperationException("Mirror.dll not found");
             }
-            if (MirrorTestsAsmDef == null)
+            if (string.IsNullOrEmpty(MirrorTestsAssemblyPath))
             {
                 throw new InvalidOperationException("Mirror.Tests.dll not found");
             }
-            if (UnityEngineAsmDef == null)
+            if (string.IsNullOrEmpty(UnityEngineAssemblyPath))
             {
                 throw new InvalidOperationException("UnityEngine.dll not found");
             }
-            if (UnityEngineCoreAsmDef == null)
+            if (string.IsNullOrEmpty(UnityEngineCoreAssemblyPath))
             {
                 throw new InvalidOperationException("UnityEngine.CoreModule.dll not found");
             }
-            if (UnityEditorAsmDef == null)
+            if (string.IsNullOrEmpty(UnityEditorAssemblyPath))
             {
                 throw new InvalidOperationException("UnityEditor.dll not found");
             }
-            if (MainAsmDef == null)
+            if (string.IsNullOrEmpty(MainAssemblyPath))
             {
                 throw new InvalidOperationException("Assembly-CSharp.dll not found");
             }
+
+            MirrorMockAssemblyPath = OutputTempDirectory + Path.GetFileName(MirrorAssemblyPath);
         }
 
-        private static void AssignModules()
+        // make sure the needed directory exists
+        static void EnsureOutputDirectory()
         {
-            MainModDef = MainAsmDef.MainModule;
-            MirrorModDef = MirrorAsmDef.MainModule;
-            MirrorTestsModDef = MirrorTestsAsmDef.MainModule;
-            UnityEngineModDef = UnityEngineAsmDef.MainModule;
-            UnityEngineCoreModDef = UnityEngineCoreAsmDef.MainModule;
-            UnityEditorModDef = UnityEditorAsmDef.MainModule;
+            if (!Directory.Exists(OutputBaseDirectory))
+            {
+                throw new DirectoryNotFoundException("Missing WeaverAssembly base output folder");
+            }
 
-            if (MirrorModDef == null)
+            if (!Directory.Exists(OutputTempDirectory))
             {
-                throw new InvalidOperationException("Mirror.dll MainModule not found");
-            }
-            if (MirrorTestsModDef == null)
-            {
-                throw new InvalidOperationException("Mirror.Tests.dll MainModule not found");
-            }
-            if (UnityEngineModDef == null)
-            {
-                throw new InvalidOperationException("UnityEngine.dll MainModule not found");
-            }
-            if (UnityEngineCoreModDef == null)
-            {
-                throw new InvalidOperationException("UnityEngine.CoreModule.dll MainModule not found");
-            }
-            if (UnityEditorModDef == null)
-            {
-                throw new InvalidOperationException("UnityEditor.dll MainModule not found");
-            }
-            if (MainModDef == null)
-            {
-                throw new InvalidOperationException("Assembly-CSharp.dll MainModule not found");
+                Directory.CreateDirectory(OutputTempDirectory);
             }
         }
 
-        private static void AssignTypes()
+        public static void Setup()
         {
-            NBTypeDef = MirrorModDef.GetType("Mirror.NetworkBehaviour");
-            MockMBTypeDef = MirrorTestsModDef.GetType("Mirror.MockMonoBehaviour");
-            MBTypeDef = UnityEngineCoreModDef.GetType("UnityEngine.MonoBehaviour");
-        }
-
-        private static void Setup()
-        {
-            AssignAssemblies();
-            AssignModules();
-            AssignTypes();
+            EnsureOutputDirectory();
+            AssignAssemblyPaths();
         }
         #endregion
 
+        public static MethodDefinition ResolveMethod(TypeDefinition typeDef, string methodName)
+        {
+            foreach (MethodDefinition method in typeDef.Methods)
+            {
+                //Debug.LogFormat("{0} = {1}", method.Name, methodName);
+                if (method.Name == methodName)
+                {
+                    return method;
+                }
+            }
+            return null;
+        }
+
+        public static void SendCommandInternal(Type invokeClass, string cmdName, NetworkWriter writer, int channelId)
+        {
+            Debug.LogFormat("HandleSendCommandInternal called: {0} - {1} - {2} - {3}", invokeClass.Name, cmdName, writer.Position, channelId);
+        }
+
         public static void DoStuff()
         {
+            bool needsWrite = false;
+            DefaultAssemblyResolver assemblyResolver = new DefaultAssemblyResolver();
+            foreach (string refPath in ReferenceDirectories) {
+                assemblyResolver.AddSearchDirectory(refPath);
+            }
 
-            foreach (TypeDefinition type in MirrorModDef.Types)
+            ReaderParameters readParams = new ReaderParameters { AssemblyResolver = assemblyResolver };
+            using (AssemblyDefinition mirrorAsmDef = AssemblyDefinition.ReadAssembly(MirrorAssemblyPath, readParams))
+            using (AssemblyDefinition unityCoreAsmDef = AssemblyDefinition.ReadAssembly(UnityEngineCoreAssemblyPath, readParams))
+            using (AssemblyDefinition mirrorTestsAsmDef = AssemblyDefinition.ReadAssembly(MirrorTestsAssemblyPath, readParams))
             {
-                if (type != NBTypeDef && !type.IsDerivedFrom(NBTypeDef)) continue;
+                ModuleDefinition mirrorModDef = mirrorAsmDef.MainModule;
+                ModuleDefinition mirrorTestsModDef = mirrorTestsAsmDef.MainModule;
 
-                //Debug.LogFormat("Type: {0}", type.FullName);
-                foreach (MethodDefinition method in type.Methods)
+                TypeDefinition networkBehaviourTD = mirrorModDef.GetType("Mirror.NetworkBehaviour");
+                TypeDefinition mockMonoBehaviourTD = mirrorTestsAsmDef.MainModule.GetType("Mirror.MockMonoBehaviour");
+                TypeDefinition weaverMockerTD = mirrorTestsAsmDef.MainModule.ImportReference(typeof(Mirror.WeaverMocker)).Resolve();
+                TypeDefinition monoBehaviourTD = unityCoreAsmDef.MainModule.GetType("UnityEngine.MonoBehaviour");
+
+                MethodDefinition mockCommand = ResolveMethod(weaverMockerTD, "SendCommandInternal");
+                MethodDefinition realCommand = ResolveMethod(networkBehaviourTD, "SendCommandInternal");
+
+                //mirrorModDef.ImportReference(weaverMockerTD);
+                MethodReference mockCommandRef = mirrorModDef.ImportReference(mockCommand);
+
+                ILProcessor ilp = realCommand.Body.GetILProcessor();
+                realCommand.Body.Instructions.Clear();
+                ilp.Append(ilp.Create(OpCodes.Nop));
+                for (int i = 1; i <= realCommand.Parameters.Count; i++)
                 {
-                    if (method.Name == "SendCommandInternal")
-                    {
-                        ILProcessor ilp = method.Body.GetILProcessor();
-                        foreach (Instruction op in method.Body.Instructions)
-                        {
-                            Debug.LogFormat("op: {0}", op.ToString());
-                        }
-                    }
+                    ilp.Append(ilp.Create(OpCodes.Ldarg, i));
                 }
+                ilp.Append(ilp.Create(OpCodes.Call, mockCommandRef));
+                ilp.Append(ilp.Create(OpCodes.Ret));
+
+                mirrorAsmDef.Write(MirrorMockAssemblyPath);
+
+                //foreach (TypeDefinition type in mirrorModDef.Types)
+                //{
+                //    if (type != NBTypeDef && !type.IsDerivedFrom(NBTypeDef)) continue;
+
+                //    //Debug.LogFormat("Type: {0}", type.FullName);
+                //    foreach (MethodDefinition method in type.Methods)
+                //    {
+                //        if (method.Name == "SendCommandInternal")
+                //        {
+                //            ILProcessor ilp = method.Body.GetILProcessor();
+                //            foreach (Instruction op in method.Body.Instructions)
+                //            {
+                //                Debug.LogFormat("op: {0}", op.ToString());
+                //            }
+
+                //            needsWrite = true;
+                //        }
+                //    }
+                //}
+
+                //if (needsWrite)
+                //{
+                //    mirrorAsmDef.Write(MirrorMockAssemblyPath);
+                //}
             }
         }
     }
