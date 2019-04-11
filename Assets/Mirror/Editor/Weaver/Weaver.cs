@@ -538,10 +538,22 @@ namespace Mirror.Weaver
 
         static bool Weave(string assName, IEnumerable<string> dependencies, IAssemblyResolver assemblyResolver, string unityEngineDLLPath, string mirrorNetDLLPath, string outputDir)
         {
-            ReaderParameters readParams = Helpers.ReaderParameters(assName, dependencies, assemblyResolver, unityEngineDLLPath, mirrorNetDLLPath);
-
-            using (CurrentAssembly = AssemblyDefinition.ReadAssembly(assName))
+            //ReaderParameters readParams = Helpers.ReaderParameters(assName, dependencies, assemblyResolver, unityEngineDLLPath, mirrorNetDLLPath);
+            using (DefaultAssemblyResolver asmResolver = new DefaultAssemblyResolver())
+            using (CurrentAssembly = AssemblyDefinition.ReadAssembly(assName, new ReaderParameters { ReadWrite = true }))
             {
+                asmResolver.AddSearchDirectory(Path.GetDirectoryName(assName));
+                asmResolver.AddSearchDirectory(Helpers.UnityEngineDLLDirectoryName());
+                asmResolver.AddSearchDirectory(Path.GetDirectoryName(unityEngineDLLPath));
+                asmResolver.AddSearchDirectory(Path.GetDirectoryName(mirrorNetDLLPath));
+                if (dependencies != null)
+                {
+                    foreach (string path in dependencies)
+                    {
+                        asmResolver.AddSearchDirectory(path);
+                    }
+                }
+
                 SetupTargetTypes();
                 Readers.Init(CurrentAssembly);
                 Writers.Init(CurrentAssembly);
