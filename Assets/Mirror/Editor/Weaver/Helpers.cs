@@ -101,7 +101,7 @@ namespace Mirror.Weaver
                     helper.AddSearchDirectory(path);
             }
             parameters.AssemblyResolver = assemblyResolver;
-            parameters.SymbolReaderProvider = GetSymbolReaderProvider(assemblyPath);
+            //parameters.SymbolReaderProvider = GetSymbolReaderProvider(assemblyPath);
             return parameters;
         }
 

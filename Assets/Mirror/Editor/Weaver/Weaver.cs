@@ -540,7 +540,7 @@ namespace Mirror.Weaver
         {
             ReaderParameters readParams = Helpers.ReaderParameters(assName, dependencies, assemblyResolver, unityEngineDLLPath, mirrorNetDLLPath);
 
-            using (CurrentAssembly = AssemblyDefinition.ReadAssembly(assName, readParams))
+            using (CurrentAssembly = AssemblyDefinition.ReadAssembly(assName))
             {
                 SetupTargetTypes();
                 Readers.Init(CurrentAssembly);
@@ -607,11 +607,15 @@ namespace Mirror.Weaver
                         return false;
                     }
 
-                    string dest = Helpers.DestinationFileFor(outputDir, assName);
-                    //Console.WriteLine ("Output:" + dest);
-
-                    WriterParameters writeParams = Helpers.GetWriterParameters(readParams);
-                    CurrentAssembly.Write(dest, writeParams);
+                    // write to outputDir if specified, otherwise perform in-place write
+                    if (outputDir != null)
+                    {
+                        CurrentAssembly.Write(Helpers.DestinationFileFor(outputDir, assName));
+                    }
+                    else
+                    {
+                        CurrentAssembly.Write();
+                    }
                 }
             }
 
@@ -623,27 +627,27 @@ namespace Mirror.Weaver
             WeavingFailed = false;
             WeaveLists = new WeaverLists();
 
-            UnityAssembly = AssemblyDefinition.ReadAssembly(unityEngineDLLPath);
-            NetAssembly = AssemblyDefinition.ReadAssembly(mirrorNetDLLPath);
-
-            SetupUnityTypes();
-
-            try
+            using (UnityAssembly = AssemblyDefinition.ReadAssembly(unityEngineDLLPath))
+            using (NetAssembly = AssemblyDefinition.ReadAssembly(mirrorNetDLLPath))
             {
-                foreach (string ass in assemblies)
+                SetupUnityTypes();
+
+                try
                 {
-                    if (!Weave(ass, dependencies, assemblyResolver, unityEngineDLLPath, mirrorNetDLLPath, outputDir))
+                    foreach (string ass in assemblies)
                     {
-                        return false;
+                        if (!Weave(ass, dependencies, assemblyResolver, unityEngineDLLPath, mirrorNetDLLPath, outputDir))
+                        {
+                            return false;
+                        }
                     }
                 }
+                catch (Exception e)
+                {
+                    Log.Error("Exception :" + e);
+                    return false;
+                }
             }
-            catch (Exception e)
-            {
-                Log.Error("Exception :" + e);
-                return false;
-            }
-            CorLibModule = null;
             return true;
         }
     }

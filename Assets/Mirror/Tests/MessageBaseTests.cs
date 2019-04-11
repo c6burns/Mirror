@@ -8,6 +8,7 @@ namespace Mirror.Tests
         public string StringValue;
         public double DoubleValue;
 
+
         public TestMessage(int i, string s, double d)
         {
             IntValue = i;

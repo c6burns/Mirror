@@ -1,10 +1,12 @@
 using UnityEngine;
 
+
 namespace Mirror.Examples.Pong
 {
     public class Ball : NetworkBehaviour
     {
         public float speed = 30;
+
 
         public void Start()
         {
