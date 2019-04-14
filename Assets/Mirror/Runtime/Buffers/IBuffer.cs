@@ -10,7 +10,6 @@ namespace Mirror.Buffers
         void WriteULong(ulong src);
         void WriteFloat(float src);
         void WriteDouble(double src);
-        void WriteDecimal(decimal src);
         void WriteBytes(byte[] data, int offset, int length);
         void WriteString(string src);
         byte ReadByte();
@@ -19,7 +18,6 @@ namespace Mirror.Buffers
         ulong ReadULong();
         float ReadFloat();
         double ReadDouble();
-        decimal ReadDecimal();
         int ReadBytes(byte[] data, int offset, int length);
         string ReadString(int length);
     }

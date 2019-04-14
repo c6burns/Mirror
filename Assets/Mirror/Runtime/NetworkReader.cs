@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using Mirror.Buffers;
 using UnityEngine;
@@ -48,7 +49,7 @@ namespace Mirror
         public uint ReadUInt32() => reader.ReadUInt();
         public long ReadInt64() => (long)reader.ReadULong();
         public ulong ReadUInt64() => reader.ReadULong();
-        public decimal ReadDecimal() => reader.ReadDecimal();
+        public decimal ReadDecimal() => new DecimalUnion(this).Read();
         public float ReadSingle() => reader.ReadFloat();
         public double ReadDouble() => reader.ReadDouble();
 

@@ -183,14 +183,6 @@ namespace Mirror.Buffers
             UpdateWrite(BufferUtil.WriteDouble(_buffer.Span, _position, src));
         }
 
-        void IBuffer.WriteDecimal(decimal src)
-        {
-#if MIRROR_BUFFER_CHECK_BOUNDS
-            CheckWrite(sizeof(decimal));
-#endif
-            UpdateWrite(BufferUtil.WriteDecimal(_buffer.Span, _position, src));
-        }
-
         void IBuffer.WriteBytes(byte[] data, int offset, int length)
         {
 #if MIRROR_BUFFER_CHECK_BOUNDS
@@ -258,15 +250,6 @@ namespace Mirror.Buffers
             CheckRead(sizeof(double));
 #endif
             UpdateRead(BufferUtil.ReadDouble(out double dst, _buffer.Span, _position));
-            return dst;
-        }
-
-        decimal IBuffer.ReadDecimal()
-        {
-#if MIRROR_BUFFER_CHECK_BOUNDS
-            CheckRead(sizeof(decimal));
-#endif
-            UpdateRead(BufferUtil.ReadDecimal(out decimal dst, _buffer.Span, _position));
             return dst;
         }
 
