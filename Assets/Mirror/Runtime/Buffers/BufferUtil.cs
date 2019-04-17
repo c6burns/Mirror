@@ -8,7 +8,10 @@ namespace Mirror.Buffers
     public static class BufferUtil
     {
         const MethodImplOptions Inline = MethodImplOptions.AggressiveInlining;
-        static Encoding _encoding = new UTF8Encoding(false);
+        static Encoding _encoding = new UTF8Encoding(false, true);
+
+        [MethodImpl(Inline)]
+        internal static int StringByteCount(string stringSrc) => _encoding.GetByteCount(stringSrc);
 
         #region Min and Max: inlined
         [MethodImpl(Inline)]
@@ -149,43 +152,44 @@ namespace Mirror.Buffers
 
         #region Write: safe binary writing using Span
         [MethodImpl(Inline)]
-        public static int Write<T>(Span<byte> dst, T src) where T : struct
+        public static int Write<T>(Span<byte> dst, int dstOffset, T src) where T : struct
         {
-            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(dst), src);
+            Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(dst), (IntPtr)dstOffset), src);
+            //Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(dst), src);
             return Unsafe.SizeOf<T>();
         }
 
         [MethodImpl(Inline)]
-        public static int WriteBool(Span<byte> dst, int dstOffset, bool src) => Write(dst.Slice(dstOffset), (byte)(src ? 1 : 0));
+        public static int WriteBool(Span<byte> dst, int dstOffset, bool src) => Write(dst, dstOffset, (byte)(src ? 1 : 0));
 
         [MethodImpl(Inline)]
-        public static int WriteSByte(Span<byte> dst, int dstOffset, sbyte src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteSByte(Span<byte> dst, int dstOffset, sbyte src) => Write(dst, dstOffset, src);
         [MethodImpl(Inline)]
-        public static int WriteByte(Span<byte> dst, int dstOffset, byte src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteByte(Span<byte> dst, int dstOffset, byte src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
-        public static int WriteShort(Span<byte> dst, int dstOffset, short src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteShort(Span<byte> dst, int dstOffset, short src) => Write(dst, dstOffset, src);
         [MethodImpl(Inline)]
-        public static int WriteUShort(Span<byte> dst, int dstOffset, ushort src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteUShort(Span<byte> dst, int dstOffset, ushort src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
-        public static int WriteInt(Span<byte> dst, int dstOffset, int src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteInt(Span<byte> dst, int dstOffset, int src) => Write(dst, dstOffset, src);
         [MethodImpl(Inline)]
-        public static int WriteUInt(Span<byte> dst, int dstOffset, uint src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteUInt(Span<byte> dst, int dstOffset, uint src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
-        public static int WriteLong(Span<byte> dst, int dstOffset, long src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteLong(Span<byte> dst, int dstOffset, long src) => Write(dst, dstOffset, src);
         [MethodImpl(Inline)]
-        public static int WriteULong(Span<byte> dst, int dstOffset, ulong src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteULong(Span<byte> dst, int dstOffset, ulong src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
-        public static int WriteFloat(Span<byte> dst, int dstOffset, float src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteFloat(Span<byte> dst, int dstOffset, float src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
-        public static int WriteDouble(Span<byte> dst, int dstOffset, double src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteDouble(Span<byte> dst, int dstOffset, double src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
-        public static int WriteDecimal(Span<byte> dst, int dstOffset, decimal src) => Write(dst.Slice(dstOffset), src);
+        public static int WriteDecimal(Span<byte> dst, int dstOffset, decimal src) => Write(dst, dstOffset, src);
 
         [MethodImpl(Inline)]
         public static int WriteBytes(Span<byte> dst, int dstOffset, ReadOnlySpan<byte> src, int srcOffset, int byteLength)
@@ -196,53 +200,142 @@ namespace Mirror.Buffers
             }
             return 0;
         }
+
+        //public static int WriteString(Span<byte> dstSpan, int dstOffset, string src, int srcOffset, int srcLength)
+        //{
+        //    //ref byte dst = ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(dstSpan), (IntPtr)dstOffset);
+        //    //return _encoding.GetBytes(psrc, srcLength, Unsafe.AsPointer(dst), dst.Length - dstOffset);
+
+        //}
         #endregion
 
         #region Read: safe binary reading using span
         [MethodImpl(Inline)]
-        public static int Read<T>(out T dst, Span<byte> src) where T : struct
+        public static int Read<T>(out T dst, Span<byte> src, int srcOffset) where T : struct
         {
-            dst = Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(src));
+            dst = Unsafe.ReadUnaligned<T>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(src), (IntPtr)srcOffset));
+            //dst = Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(src));
             return Unsafe.SizeOf<T>();
         }
 
         [MethodImpl(Inline)]
-        public static int ReadBool(out bool dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadBool(out bool dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadSByte(out sbyte dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadSByte(out sbyte dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
         [MethodImpl(Inline)]
-        public static int ReadByte(out byte dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadByte(out byte dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadShort(out short dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadShort(out short dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
         [MethodImpl(Inline)]
-        public static int ReadUShort(out ushort dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadUShort(out ushort dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadInt(out int dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadInt(out int dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
         [MethodImpl(Inline)]
-        public static int ReadUInt(out uint dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadUInt(out uint dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadLong(out long dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadLong(out long dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
         [MethodImpl(Inline)]
-        public static int ReadULong(out ulong dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadULong(out ulong dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadFloat(out float dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadFloat(out float dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadDouble(out double dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadDouble(out double dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
-        public static int ReadDecimal(out decimal dst, Span<byte> src, int srcOffset) => Read(out dst, src.Slice(srcOffset));
+        public static int ReadDecimal(out decimal dst, Span<byte> src, int srcOffset) => Read(out dst, src, srcOffset);
 
         [MethodImpl(Inline)]
         public static int ReadBytes(Span<byte> dst, int dstOffset, Span<byte> src, int srcOffset, int byteLength) => WriteBytes(src, srcOffset, dst, dstOffset, byteLength);
         #endregion
+        
+        #region UTF8: custom encode / decode ... experimental
+        const char UTF8UnknownChar = '?';
+        static readonly int UTF8MaxBytesPerChar = Encoding.UTF8.GetMaxByteCount(1);
 
         [MethodImpl(Inline)]
-        internal static int StringByteCount(string stringSrc) => _encoding.GetByteCount(stringSrc);
+        internal static int MaxBytesUTF8(string stringSrc)
+        {
+            return UTF8MaxBytesPerChar * stringSrc.Length;
+        }
+
+        [MethodImpl(Inline)]
+        public static int CodePointUTF16(char high, char low)
+        {
+            // See RFC 2781, Section 2.2
+            // http://www.faqs.org/rfcs/rfc2781.html
+            int h = (high & 0x3FF) << 10;
+            int l = low & 0x3FF;
+            return (h | l) + 0x10000;
+        }
+
+        [MethodImpl(Inline)]
+        public static int WriteUTF8(Span<byte> dstSpan, int dstOffset, string srcStr) => WriteUTF8(dstSpan, dstOffset, srcStr, 0, srcStr.Length);
+        [MethodImpl(Inline)]
+        public static int WriteUTF8(Span<byte> dstSpan, int dstOffset, string srcStr, int srcOffset, int srcLen)
+        {
+            int dstIdx = 0;
+            ref byte dst = ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(dstSpan), (IntPtr)dstOffset);
+            ref char src = ref MemoryMarshal.GetReference(srcStr.AsSpan(srcOffset, srcLen));
+            for (int i = 0; i < srcLen; i++)
+            {
+                char c = Unsafe.ReadUnaligned<char>(ref Unsafe.As<char, byte>(ref Unsafe.Add(ref src, i)));
+                if (c < 0x80)
+                {
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)c);
+                }
+                else if (c < 0x800)
+                {
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0xc0 | (c >> 6)));
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0x80 | (c & 0x3f)));
+                }
+                else if (char.IsSurrogate(c))
+                {
+                    if (!char.IsHighSurrogate(c))
+                    {
+                        throw new System.Text.DecoderFallbackException("missing expected high surrogate");
+                        //dst[dstIndex++] = (byte)UTF8UnknownChar;
+                        //continue;
+                    }
+
+                    if (i + 1 >= srcLen)
+                    {
+                        throw new System.Text.DecoderFallbackException("string ended on partial surrogate");
+                        //dst[dstIndex++] = (byte)UTF8UnknownChar;
+                    }
+
+                    char c2 = Unsafe.ReadUnaligned<char>(ref Unsafe.As<char, byte>(ref Unsafe.Add(ref src, ++i)));
+                    if (!char.IsLowSurrogate(c2))
+                    {
+                        throw new System.Text.DecoderFallbackException("missing expected low surrogate");
+                        //dst[dstIndex++] = (byte)UTF8UnknownChar;
+                        //dst[dstIndex++] = char.IsHighSurrogate(c2) ? (byte)UTF8UnknownChar : (byte)c2;
+                        //continue;
+                    }
+
+                    int codePoint = CodePointUTF16(c, c2);
+                    // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630.
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0xf0 | (codePoint >> 18)));
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0x80 | ((codePoint >> 12) & 0x3f)));
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0x80 | ((codePoint >> 6) & 0x3f)));
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0x80 | (codePoint & 0x3f)));
+                }
+                else
+                {
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0xe0 | (c >> 12)));
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0x80 | ((c >> 6) & 0x3f)));
+                    Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref dst, (IntPtr)dstIdx++), (byte)(0x80 | (c & 0x3f)));
+                }
+            }
+
+            return dstIdx - dstOffset;
+        }
+        #endregion
+
     }
 }

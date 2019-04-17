@@ -8,7 +8,7 @@ namespace Mirror.Buffers
     public static class BufferUtilUnsafe
     {
         const MethodImplOptions Inline = MethodImplOptions.AggressiveInlining;
-        static Encoding _encoding = new UTF8Encoding(false);
+        static Encoding _encoding = new UTF8Encoding(false, true);
 
         #region Copy#: raw pointer based binary copy for exact sizes from 1 - 8 bytes
         [MethodImpl(Inline)]

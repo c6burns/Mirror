@@ -202,9 +202,9 @@ namespace Mirror.Buffers
         void IBuffer.WriteString(string src)
         {
 #if MIRROR_BUFFER_CHECK_BOUNDS
-            CheckWrite(BufferUtil.StringByteCount(src));
+            CheckWrite(BufferUtil.MaxBytesUTF8(src));
 #endif
-            UpdateWrite(BufferUtilUnsafe.Write(_buffer.Span, _position, src));
+            UpdateWrite(BufferUtil.WriteUTF8(_buffer.Span, _position, src));
         }
 
         byte IBuffer.ReadByte()
