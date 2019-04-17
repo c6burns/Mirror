@@ -62,7 +62,7 @@ namespace Mirror
         public void Write(ulong value) => writer.WriteULong(value);
         public void Write(float value) => writer.WriteFloat(value);
         public void Write(double value) => writer.WriteDouble(value);
-        public void Write(decimal value) => writer.WriteDecimal(value);
+        public void Write(decimal value) => new DecimalUnion(value).Write(this);
 
         public void Write(string value)
         {
